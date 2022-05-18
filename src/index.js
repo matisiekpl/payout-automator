@@ -31,7 +31,7 @@ async function login() {
     await page.setUserAgent(userAgent.toString())
     // await page.goto('https://www.paypal.com/myaccount/transfer/homepage/pay');
     await page.goto('https://www.paypal.com/signin');
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(5000);
     // let { captchas, error } = await page.findRecaptchas()
     // console.log(captchas);
     // console.log(error);
@@ -40,17 +40,17 @@ async function login() {
     // await page.waitForTimeout(60000);
     await page.waitForSelector('#email');
     await page.focus('#email');
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(300);
     await page.evaluate(() => document.getElementById('email').value = "")
     await page.keyboard.type(email);
     await page.click('#btnNext');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(5000);
     await page.focus('#password');
     await page.keyboard.type(password);
     await page.click('#acceptAllButton');
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(800);
     await page.click('#btnLogin');
-    await page.waitForTimeout(2500);
+    await page.waitForTimeout(5500);
 
     await page.focus('#otpCode');
     let token = totp(key);
@@ -80,32 +80,37 @@ async function payout(recipientOriginal, value) {
         let recipient = recipientOriginal;
         await login();
         const page = await browser.newPage();
-        await page.waitForTimeout(5000);
+        await page.waitForTimeout(7000);
         await page.setUserAgent(userAgent.toString())
         await page.setViewport({width: 700, height: 0, deviceScaleFactor: 0.5});
         await page.goto('https://www.paypal.com/myaccount/transfer/homepage/pay');
-        await page.waitForTimeout(3000);
-        await page.focus('#fn-sendRecipient');
-        await page.waitForTimeout(300);
+        await page.waitForTimeout(5000);
+        await page.click('#fn-sendRecipient');
+        await page.waitForTimeout(500);
         const lastLetter = recipient[recipient.length - 1];
         recipient = lastLetter + recipient.slice(0, -1);
-        await page.type('#fn-sendRecipient', recipient);
+        // await page.type('#fn-sendRecipient', recipientOriginal, {delay: 100});
+        for (const c of recipientOriginal) {
+            await page.keyboard.type(c, {delay: 100});
+        }
+        // await page.keyboard.type(recipient, {delay: 100})
+        // await page.evaluate((recipient) => document.getElementById('fn-sendRecipient').value = recipient, recipientOriginal);
         await page.keyboard.press('Enter');
-        await page.waitForTimeout(1500);
+        await page.waitForTimeout(2500);
         await page.keyboard.type(value);
         await page.keyboard.press('Enter');
-        await page.waitForTimeout(3000);
+        await page.waitForTimeout(5000);
         try {
             await page.click('#personal');
         } catch (err) {
         }
-        await page.waitForTimeout(1500);
+        await page.waitForTimeout(2500);
         // await page.evaluate(() => {
         //     window.scrollBy(0, window.innerHeight);
         // });
-        await page.waitForTimeout(100);
+        await page.waitForTimeout(500);
         await page.keyboard.press('Enter');
-        await page.waitForTimeout(3000);
+        await page.waitForTimeout(5000);
         await page.screenshot({path: 'example.png'});
         let success = false;
         try {
@@ -137,7 +142,7 @@ async function listen() {
 
 async function watch() {
     listen();
-    const client = await MongoClient.connect('mongodb://root:4NC2h4fQsUFtJmyt@srv1.paysafe.money', {useNewUrlParser: true});
+    const client = await MongoClient.connect(process.env.MONGO_URI, {useNewUrlParser: true});
     const db = client.db('psc_exchange');
     const coll = db.collection('exchanges');
     while (true) {
@@ -147,7 +152,7 @@ async function watch() {
             payment_status: 'valid'
         });
         if (exchange) {
-            console.log(exchange);
+            consola.info(exchange);
             exchange.payout_status = 'automated_payout_working';
             await coll.updateOne({_id: exchange._id}, {$set: exchange});
             consola.info(`Sending ${exchange.effective_value} PLN to ${exchange.paypalEmail}`);
