@@ -71,7 +71,7 @@ async function login() {
 async function payout(recipientOriginal, value) {
     try {
         browser = await puppeteer.launch({
-            headless: false,
+            headless: true,
             defaultViewport: {
                 width: 800, height: 1500
             },
