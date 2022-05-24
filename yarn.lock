@@ -1305,6 +1305,14 @@ pupa@^2.1.1:
   dependencies:
     escape-goat "^2.0.0"
 
+puppeteer-extra-plugin-anonymize-ua@^2.3.3:
+  version "2.3.3"
+  resolved "https://registry.yarnpkg.com/puppeteer-extra-plugin-anonymize-ua/-/puppeteer-extra-plugin-anonymize-ua-2.3.3.tgz#31739b5ea35d18e393e27d70aec95c4763cfc59a"
+  integrity sha512-paYYzfP49IZnJnYU0HcnsftnHwuLw6qLL6C9jY5wvAF0IGFtjfTRfRtml2m/sQyJ+7J65q1iglf3AnMHePCKKw==
+  dependencies:
+    debug "^4.1.1"
+    puppeteer-extra-plugin "^3.2.0"
+
 puppeteer-extra-plugin-recaptcha@^3.5.0:
   version "3.5.0"
   resolved "https://registry.yarnpkg.com/puppeteer-extra-plugin-recaptcha/-/puppeteer-extra-plugin-recaptcha-3.5.0.tgz#53969b2618a54542cdca90a9a06dac10b2cd20d9"

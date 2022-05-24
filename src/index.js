@@ -1,6 +1,7 @@
 const express = require('express');
 const consola = require('consola');
 const puppeteer = require("puppeteer-extra");
+puppeteer.use(require('puppeteer-extra-plugin-anonymize-ua')())
 const prompt = require('prompt');
 const totp = require("totp-generator");
 const userAgent = require('user-agents');
@@ -24,11 +25,16 @@ const key = process.env.PAYPAL_TOTP;
 
 prompt.start();
 
-let browser;
+let browser = await puppeteer.launch({
+    headless: false,
+    defaultViewport: {
+        width: 800, height: 1500
+    },
+    args: ["--disable-gpu", "--disable-dev-shm-usage", "--disable-setuid-sandbox", "--no-sandbox", "--window-size=800,1400"]
+});
 
 async function login() {
     const page = await browser.newPage();
-    await page.setUserAgent(userAgent.toString())
     // await page.goto('https://www.paypal.com/myaccount/transfer/homepage/pay');
     await page.goto('https://www.paypal.com/signin');
     await page.waitForTimeout(5000);
@@ -70,18 +76,10 @@ async function login() {
 
 async function payout(recipientOriginal, value) {
     try {
-        browser = await puppeteer.launch({
-            headless: true,
-            defaultViewport: {
-                width: 800, height: 1500
-            },
-            args: ["--disable-gpu", "--disable-dev-shm-usage", "--disable-setuid-sandbox", "--no-sandbox", "--window-size=800,1400"]
-        });
         let recipient = recipientOriginal;
         await login();
         const page = await browser.newPage();
         await page.waitForTimeout(7000);
-        await page.setUserAgent(userAgent.toString())
         await page.setViewport({width: 700, height: 0, deviceScaleFactor: 0.5});
         await page.goto('https://www.paypal.com/myaccount/transfer/homepage/pay');
         await page.waitForTimeout(5000);
