@@ -25,15 +25,23 @@ const key = process.env.PAYPAL_TOTP;
 
 prompt.start();
 
-let browser = await puppeteer.launch({
-    headless: false,
-    defaultViewport: {
-        width: 800, height: 1500
-    },
-    args: ["--disable-gpu", "--disable-dev-shm-usage", "--disable-setuid-sandbox", "--no-sandbox", "--window-size=800,1400"]
-});
+let browser;
+
+async function ensureBrowserWorking() {
+    if (browser == null)
+        browser = await puppeteer.launch({
+            headless: false,
+            defaultViewport: {
+                width: 800, height: 1500
+            },
+            args: ["--disable-gpu", "--disable-dev-shm-usage", "--disable-setuid-sandbox", "--no-sandbox", "--window-size=800,1400"]
+        });
+    const p = await browser.newPage();
+    await p.goto('https://example.com/');
+}
 
 async function login() {
+    await ensureBrowserWorking();
     const page = await browser.newPage();
     // await page.goto('https://www.paypal.com/myaccount/transfer/homepage/pay');
     await page.goto('https://www.paypal.com/signin');
@@ -77,7 +85,10 @@ async function login() {
 async function payout(recipientOriginal, value) {
     try {
         let recipient = recipientOriginal;
-        await login();
+        try {
+            await login();
+        } catch (err) {
+        }
         const page = await browser.newPage();
         await page.waitForTimeout(7000);
         await page.setViewport({width: 700, height: 0, deviceScaleFactor: 0.5});
@@ -115,6 +126,7 @@ async function payout(recipientOriginal, value) {
             await page.waitForXPath(`//*[contains(text(), "Poinformujemy użytkownika ${recipientOriginal}")]`, {timeout: 30000});
             success = true;
         } catch (err) {
+            consola.error(err)
         }
         if (success)
             consola.success(`Payout successful`)
@@ -131,6 +143,7 @@ async function payout(recipientOriginal, value) {
 }
 
 async function listen() {
+    await ensureBrowserWorking();
     const app = express();
     app.get('/totp', (req, res) => (res.json({code: totp(key)})));
     const port = process.env.PORT || 4110;
@@ -139,7 +152,7 @@ async function listen() {
 }
 
 async function watch() {
-    listen();
+    await listen();
     const client = await MongoClient.connect(process.env.MONGO_URI, {useNewUrlParser: true});
     const db = client.db('psc_exchange');
     const coll = db.collection('exchanges');
