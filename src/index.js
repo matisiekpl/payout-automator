@@ -28,7 +28,7 @@ prompt.start();
 let browser;
 
 async function ensureBrowserWorking() {
-    if (browser == null)
+    if (browser == null) {
         browser = await puppeteer.launch({
             headless: false,
             defaultViewport: {
@@ -36,13 +36,26 @@ async function ensureBrowserWorking() {
             },
             args: ["--disable-gpu", "--disable-dev-shm-usage", "--disable-setuid-sandbox", "--no-sandbox", "--window-size=800,1400"]
         });
-    const p = await browser.newPage();
-    await p.goto('https://example.com/');
+        const p = await browser.newPage();
+        await p.goto('https://example.com/');
+    }
+}
+
+const pages = [];
+
+async function purge() {
+    for (const page of pages)
+        try {
+            await page.close();
+        } catch (err) {
+            consola.error(err);
+        }
 }
 
 async function login() {
     await ensureBrowserWorking();
     const page = await browser.newPage();
+    pages.push(page);
     // await page.goto('https://www.paypal.com/myaccount/transfer/homepage/pay');
     await page.goto('https://www.paypal.com/signin');
     await page.waitForTimeout(5000);
@@ -57,11 +70,19 @@ async function login() {
     await page.waitForTimeout(300);
     await page.evaluate(() => document.getElementById('email').value = "")
     await page.keyboard.type(email);
-    await page.click('#btnNext');
+    try {
+        await page.click('#btnNext');
+    } catch (err) {
+        consola.error(err);
+    }
     await page.waitForTimeout(5000);
     await page.focus('#password');
     await page.keyboard.type(password);
-    await page.click('#acceptAllButton');
+    try {
+        await page.click('#acceptAllButton');
+    } catch (err) {
+        consola.error(err);
+    }
     await page.waitForTimeout(800);
     await page.click('#btnLogin');
     await page.waitForTimeout(5500);
@@ -88,8 +109,10 @@ async function payout(recipientOriginal, value) {
         try {
             await login();
         } catch (err) {
+            consola.error(err);
         }
         const page = await browser.newPage();
+        pages.push(page);
         await page.waitForTimeout(7000);
         await page.setViewport({width: 700, height: 0, deviceScaleFactor: 0.5});
         await page.goto('https://www.paypal.com/myaccount/transfer/homepage/pay');
@@ -133,7 +156,7 @@ async function payout(recipientOriginal, value) {
         else
             consola.error(`Payout failed`)
         await page.goto('https://www.paypal.com/bizcomponents/logout');
-        await browser.close();
+        await purge();
         return success;
     } catch (err) {
         console.log(err);
