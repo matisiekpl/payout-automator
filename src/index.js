@@ -144,6 +144,16 @@ async function payout(recipientOriginal, value) {
         await page.keyboard.press('Enter');
         await page.waitForTimeout(5000);
         await page.screenshot({path: 'example.png'});
+
+        try {
+            await page.click("label[name='selection_paymentType_PURCHASE']");
+            await page.waitForTimeout(500);
+            await page.click("button[data-testid='nextButton']");
+            await page.waitForTimeout(500);
+        } catch (err) {
+            consola.error(err);
+        }
+
         let success = false;
         try {
             await page.waitForXPath(`//*[contains(text(), "Poinformujemy użytkownika ${recipientOriginal}")]`, {timeout: 30000});
